@@ -107,4 +107,5 @@ const atualizarComanda = (id, codigoComanda, valorTotal) => {
     });
 };
 
+
 export default {buscarComandaPorId, criarComanda, buscarTodasComandas, deletarComanda, atualizarComanda};
