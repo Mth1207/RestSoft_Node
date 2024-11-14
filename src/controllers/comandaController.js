@@ -1,5 +1,5 @@
 import express from 'express';
-import comandaProdutoService from "../services/comandaProdutoService.js";
+import comandaProdutoService from "../services/comandaService.js";
 import logger from "../config/logger.js";
 
 const router = express.Router();

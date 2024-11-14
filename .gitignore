@@ -23,3 +23,6 @@ Thumbs.db
 # Configuração do Editor
 .vscode/
 .idea/
+
+# Arquivo de Teste com BD
+.testesComDB.js

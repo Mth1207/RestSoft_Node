@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import comandaProdutoController from './controllers/comandaProdutoController.js';
+import comandaProdutoController from './controllers/comandaController.js';
 import logger from './config/logger.js';
 
 const app = express();
