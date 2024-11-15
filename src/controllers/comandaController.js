@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.get('/comanda/:id', async(req, res) =>{
     const comandaID = req.params.id;
-    logger.info(`Requisição para comanda: ${comandaID}`);
      
     try {
         const comanda = await comandaProdutoService.buscarComandaPorId(comandaID);
@@ -24,7 +23,6 @@ router.get('/comanda/:id', async(req, res) =>{
 });
 
 router.get('/comandas', async (req, res) => {
-    logger.info('Requisição para buscar todas as comandas');
     try {
         const comandas = await comandaProdutoService.buscarTodasComandas();
 
@@ -53,8 +51,8 @@ router.post('/add-comanda', async(req, res) => {
         console.log(check);
         for (let i = 0; i < check.length; i++) {
             if(check[i].codigo_comanda === comanda.codigo_comanda) {
-                logger.warn('Erro ao criar comanda! Comanda com esse codigo ja existe!');
-                return res.status(400).send('Erro ao criar comanda! Comanda com esse codigo ja existe!');
+                logger.warn(`Erro ao criar comanda! Comanda com codigo ${comanda.codigo_comanda} ja existe!`);
+                return res.status(400).send(`Erro ao criar comanda! Comanda com codigo ${comanda.codigo_comanda} ja existe!`);
             }
         };
 

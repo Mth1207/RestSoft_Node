@@ -34,7 +34,7 @@ const buscarTodasComandas = () => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, (error, results) => {            
             if(error){
-                return reject('Não foi possível buscar as comandas: ${error.message}');
+                return reject(`Não foi possível buscar as comandas: ${error.message}`);
             }
             resolve(results);
         });
