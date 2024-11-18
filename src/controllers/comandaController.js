@@ -87,7 +87,7 @@ router.delete('/delete-comanda/:id', async(req, res) => {
         const comandaDelete = await comandaProdutoService.deletarComanda(comandaID);
         
         logger.info(`Comanda com id: ${comandaID} deletada com sucesso!`);
-        res.status(204).json({message: 'Comanda deletada com sucesso!', comandaDelete});
+        res.status(204).send();
 
     } catch (error){
         logger.error(`Erro ao deletar comanda: ${error.message}`);

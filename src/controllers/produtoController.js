@@ -95,7 +95,7 @@ router.delete('/delete-produto/:id', async(req, res) => {
         const produtoDelete = await produtoService.deletarProduto(produtoID);
         
         logger.info(`Produto com id: ${produtoID} deletado com sucesso!`);
-        res.status(204).json({message: 'Produto deletado com sucesso!', produtoDelete});
+        res.status(204).send();
 
     } catch (error){        
         logger.error(`Erro ao deletar produto: ${error.message}`);

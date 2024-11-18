@@ -109,11 +109,9 @@ const atualizarProduto = (id,codigo_produto, nome_produto, valor_un_produto, qua
                 reject('Nao foi possivel atualizar o produto!');
             }
             resolve(results);
-        });
+        });l
     });
 };
-
-
 
 
 export default {buscarProdutoPorId, buscarTodosProdutos, adicionarProduto, deletarProduto, atualizarProduto};
