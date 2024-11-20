@@ -18,8 +18,11 @@ router.get('/produto/:id', async(req, res) => {
         logger.info(`Produto com id ${produtoID} encontrado: ${JSON.stringify(produto)}`);
         res.status(200).json({message: 'Produto encontrado!', produto});
     } catch(error){
-        logger.error(`Erro ao buscar o produto: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao buscar produto: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -36,8 +39,11 @@ router.get('/produtos', async(req, res) => {
         res.status(200).json({message: 'Produtos: ', produtos});
 
     } catch(error){
-        logger.error(`Erro ao buscar produtos: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao buscar produto: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -77,8 +83,11 @@ router.post('/add-produto', async(req, res) => {
         res.status(201).json({message: 'Produto adicionado com sucesso!', produto: novoProduto});
 
     } catch (error) {
-        logger.error(`Erro ao adicionar produto: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao adicionar produto: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     };
 });
 
@@ -98,8 +107,11 @@ router.delete('/delete-produto/:id', async(req, res) => {
         res.status(204).send();
 
     } catch (error){        
-        logger.error(`Erro ao deletar produto: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao deletar produto: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -128,10 +140,16 @@ router.put('/update-produto/:id', async(req, res) => {
         const produtoUpdate = await produtoService.atualizarProduto(produtoID, produto.codigo_produto, produto.nome_produto, produto.valor_un_produto, produto.quantidade_estoque);
 
         logger.info(`Produto com id: ${produtoID} atualizado com sucesso!`);
-        res.status(200).json({message: 'Produto atualizado com sucesso!', produtoUpdate});    
+        res.status(200).json({message: 'Produto atualizado com sucesso!', 
+            produto: produtoUpdate.data_update_produto
+        });
+
     } catch(error) {
         logger.error(`Erro ao atualizar produto: ${error.stack || error.message || error}`);
-        res.status(500).send('Erro interno no servidor!');
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }    
 });
 

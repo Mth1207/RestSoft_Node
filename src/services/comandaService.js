@@ -1,5 +1,6 @@
 import conexao from "../utils/conex/conex.js";
-import dataFormatada from "../config/dataFormatada.js";
+import getDataFormatada from "../config/dataFormatada.js";
+
 
 /**
  * Busca uma comanda por ID
@@ -14,7 +15,9 @@ const buscarComandaPorId = (id) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
             if(error) {
-                reject(error);
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id });
+                return reject(`Não foi possível buscar a comanda: ${error.message}`);
             }
             resolve(results[0]);
         });
@@ -34,6 +37,8 @@ const buscarTodasComandas = () => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, (error, results) => {            
             if(error){
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', {});
                 return reject(`Não foi possível buscar as comandas: ${error.message}`);
             }
             resolve(results);
@@ -54,10 +59,14 @@ const criarComanda = (codigoComanda, valorTotal) => {
         (?, ?, ?, ?)
     `;
 
+    const dataAtualizada = getDataFormatada();
+
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [codigoComanda, valorTotal, dataFormatada, 'ABERTA'], (error, results) => {
+        conexao.query(sql, [codigoComanda, valorTotal, dataAtualizada, 'ABERTA'], (error, results) => {
             if(error){
-                reject('Não foi possível criar a comanda!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { codigoComanda, valorTotal, dataAtualizada});
+                return reject(`Erro ao executar query: ${error.message}`);
             }
             resolve(results.insertId);
         });
@@ -77,7 +86,9 @@ const deletarComanda = (id) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
             if(error){
-                reject('Não foi possível deletar a comanda!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id });
+                return reject(`Erro ao executar query: ${error.message}`);
             }
             resolve('resultado: ', results);
         });
@@ -94,15 +105,27 @@ const deletarComanda = (id) => {
  */
 const atualizarComanda = (id, codigoComanda, valorTotal) => {
     const sql = `
-        UPDATE tb_comanda SET codigo_comanda = ?, valor_total = ?, data_atualizacao_comanda = ? WHERE id = ?
+        UPDATE tb_comanda SET codigo_comanda = ?, valor_total = ?, data_update_comanda = ? WHERE id = ?
     `;
 
+    const dataAtualizada = getDataFormatada();
+
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [codigoComanda, valorTotal, dataFormatada, id], (error, results) => {
+        conexao.query(sql, [codigoComanda, valorTotal, dataAtualizada, id], (error, results) => {
             if(error){
-                reject('Não foi possível atualizar a comanda!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id, codigoComanda, valorTotal, dataAtualizada});
+                return reject(`Erro ao executar query: ${error.message}`);
             }
-            resolve('resultado: ', results);            
+
+            if (results.affectedRows === 0) {
+                return reject('Nenhuma linha foi afetada. Verifique os parâmetros ou o ID.');
+            }
+
+            resolve({
+                affectedRows: results.affectedRows,
+                data_update_comanda: dataAtualizada
+            });            
         });
     });
 };

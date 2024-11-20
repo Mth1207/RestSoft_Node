@@ -23,15 +23,21 @@
 
 // exibirDataBd();
 
-const data = new Date();
-const ano = data.getFullYear();
-const mes = String(data.getMonth() + 1).padStart(2, '0');
-const dia = String(data.getDate()).padStart(2, '0');
-const hora = String(data.getHours()).padStart(2, '0');
-const minuto = String(data.getMinutes()).padStart(2, '0');
-const segundo = String(data.getSeconds()).padStart(2, '0');
+/**
+ * Retorna a data atual no formato ISO
+ * @returns {string} - Data atual em formato ISO
+ */
+const getDataFormatada = () => {
+    const data = new Date();
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    const hora = String(data.getHours()).padStart(2, '0');
+    const minuto = String(data.getMinutes()).padStart(2, '0');
+    const segundo = String(data.getSeconds()).padStart(2, '0');
 
-const dataFormatada = `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`;
+    return `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`;
+};
 
-export default dataFormatada;
+export default getDataFormatada;
 

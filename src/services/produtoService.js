@@ -1,5 +1,5 @@
 import conexao from "../utils/conex/conex.js";
-import dataFormatada from "../config/dataFormatada.js";
+import getDataFormatada from "../config/dataFormatada.js";
 
 
 /**
@@ -15,13 +15,14 @@ const buscarProdutoPorId = (id) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
             if(error){
-                reject(error);
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id });
+                return reject(`Nao foi possivel buscar o produto: ${error.message}`);
             }
             resolve(results[0]);
         });
     });
 };
-
 
 /**
  * Busca todos os produtos do banco de dados
@@ -35,6 +36,8 @@ const buscarTodosProdutos = () => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, (error, results) => {
             if(error){
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', {});
                 return reject(`Nao foi possivel buscar os produtos: ${error.message}`);
             }
 
@@ -42,7 +45,6 @@ const buscarTodosProdutos = () => {
         });
     });
 };
-
 
 /**
  * Adiciona um produto ao banco de dados
@@ -57,17 +59,20 @@ const adicionarProduto = (codigo_produto, nome_produto, valor_un_produto, quanti
         INSERT INTO tb_produto(codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, data_insert_produto) VALUES
         (?, ?, ?, ?, ?)
     `;
+
+    const dataAtualizada = getDataFormatada();
     
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataFormatada], (error, results) => {
+        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada], (error, results) => {
             if(error){
-                reject('Nao foi possivel adicionar o produto!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada});
+                return reject(`Erro ao executar query: ${error.message}`);
             }
             resolve(results.insertId);
         });
     });
 };
-
 
 /**
  * Deleta um produto pelo identificador
@@ -82,13 +87,14 @@ const deletarProduto = (id) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
             if(error) {
-                reject('Não foi possível deletar a comanda!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id });
+                return reject(`Erro ao executar query: ${error.message}`);
             }
             resolve('resultado: ', results);
         });
     });
 };
-
 
 /**
  * Atualiza um produto
@@ -103,13 +109,25 @@ const atualizarProduto = (id,codigo_produto, nome_produto, valor_un_produto, qua
         UPDATE tb_produto SET codigo_produto = ?, nome_produto = ?, valor_un_produto = ?, quantidade_estoque = ?, data_update_produto = ? WHERE id = ?
     `;
 
+    const dataAtualizada = getDataFormatada();
+
     return new Promise ((resolve, reject) => {
-        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataFormatada, id], (error, results) => {
+        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada, id], (error, results) => {
             if(error) {
-                reject('Nao foi possivel atualizar o produto!');
+                console.error('Erro na query SQL:', sql);
+                console.error('Parâmetros:', { id, codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada});
+                return reject(`Erro ao executar query: ${error.message}`);
             }
-            resolve(results);
-        });l
+
+            if (results.affectedRows === 0) {
+                return reject('Nenhuma linha foi afetada. Verifique os parâmetros ou o ID.');
+            }
+
+            resolve({
+                affectedRows: results.affectedRows,
+                data_update_produto: dataAtualizada
+            });
+        });
     });
 };
 

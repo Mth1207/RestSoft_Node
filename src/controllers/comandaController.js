@@ -17,8 +17,11 @@ router.get('/comanda/:id', async(req, res) =>{
         logger.info(`Comanda id ${comandaID} encontrada: ${JSON.stringify(comanda)}`);
         res.json(comanda);
     } catch (error) {
-        logger.error(`Erro ao buscar comanda: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao buscar comanda: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -34,8 +37,11 @@ router.get('/comandas', async (req, res) => {
         logger.info(`Comandas encontradas: ${JSON.stringify(comandas)}`);
         res.json(comandas);
     } catch (error) {
-        logger.error('Erro ao buscar comandas: ', error.message);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao buscar comanda: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -69,8 +75,11 @@ router.post('/add-comanda', async(req, res) => {
         res.status(201).json({message: 'Comanda criada com sucesso!', comanda: novaComanda});
 
      } catch (error) {
-        logger.error(`Erro ao criar comanda: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao criar comanda: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -90,8 +99,11 @@ router.delete('/delete-comanda/:id', async(req, res) => {
         res.status(204).send();
 
     } catch (error){
-        logger.error(`Erro ao deletar comanda: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao deletar comanda: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
@@ -118,11 +130,14 @@ router.put('/update-comanda/:id', async(req, res) => {
         const comandaUpdate = await comandaProdutoService.atualizarComanda(comandaID, comanda.codigo_comanda, comanda.valor_total);
 
         logger.info(`Comanda com id ${comandaID}, atualizada com sucesso!`);
-        res.status(200).json({message: 'Comanda atualizada com sucesso!', comandaUpdate});
+        res.status(200).json({message: 'Comanda atualizada com sucesso!', comanda: comandaUpdate.data_update_comanda});
 
     } catch(error) {
-        logger.error(`Erro ao atualiza comanda: ${error.message}`);
-        res.status(500).send('Erro interno no servidor!');
+        logger.error(`Erro ao atualizar comanda: ${error.stack || error.message || error}`);
+        res.status(500).json({
+            error: 'Erro interno no servidor!',
+            detalhes: error.message || error
+        });
     }
 });
 
