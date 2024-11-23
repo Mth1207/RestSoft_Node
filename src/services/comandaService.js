@@ -14,16 +14,23 @@ const buscarComandaPorId = (id) => {
 
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Não foi possível buscar a comanda: ${error.message}`);
+            if (error) {
+                const customError = new Error(`Erro ao buscar a comanda no banco de dados: ${error.message}`);
+                customError.status = 500;
+                customError.details = { sql, params: {id} };
+                return reject(customError);
             }
+  
+            if (results.length === 0) {
+                const notFoundError = new Error(`Comanda com id ${id} não encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
             resolve(results[0]);
         });
     });
 };
-
 
 /**
  * Busca todas as comandas do banco de dados
@@ -45,7 +52,6 @@ const buscarTodasComandas = () => {
         });
     });
 };
-
 
 /**
  * Cria uma comanda com um código e valor total
@@ -95,7 +101,6 @@ const deletarComanda = (id) => {
     });
 };
 
-
 /**
  * Atualiza uma comanda
  * @param {number} id - Identificador da comanda
@@ -129,6 +134,5 @@ const atualizarComanda = (id, codigoComanda, valorTotal) => {
         });
     });
 };
-
 
 export default {buscarComandaPorId, criarComanda, buscarTodasComandas, deletarComanda, atualizarComanda};

@@ -4,24 +4,16 @@ import logger from "../config/logger.js";
 
 const router = express.Router();
 
-router.get('/comanda/:id', async(req, res) =>{
+router.get('/comanda/:id', async(req, res, next) =>{
     const comandaID = req.params.id;
      
     try {
         const comanda = await comandaProdutoService.buscarComandaPorId(comandaID);
-        if(!comanda) {
-            logger.warn(`Comanda com id ${comandaID} não encontrada!`);
-            return res.status(404).send(`Comanda com id ${comandaID} não encontrada!`);
-        }
 
         logger.info(`Comanda id ${comandaID} encontrada: ${JSON.stringify(comanda)}`);
         res.json(comanda);
     } catch (error) {
-        logger.error(`Erro ao buscar comanda: ${error.stack || error.message || error}`);
-        res.status(500).json({
-            error: 'Erro interno no servidor!',
-            detalhes: error.message || error
-        });
+        next(error);
     }
 });
 
