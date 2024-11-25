@@ -22,7 +22,7 @@ const buscarComandaPorId = (id) => {
             }
   
             if (results.length === 0) {
-                const notFoundError = new Error(`Comanda com id ${id} não encontrado!`);
+                const notFoundError = new Error(`Comanda com id ${id} não encontrada!`);
                 notFoundError.status = 404;
                 return reject(notFoundError);
             }
@@ -44,10 +44,18 @@ const buscarTodasComandas = () => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, (error, results) => {            
             if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', {});
-                return reject(`Não foi possível buscar as comandas: ${error.message}`);
+                const customError = new Error(`Erro ao buscar as comandas no banco de dados: ${error.message}`);
+                customError.status = 500;
+                customError.details = {sql};
+                return reject(customError);
             }
+
+            if(results.length === 0) {
+                const notFoundError = new Error('Nenhuma comanda encontrada!');
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
             resolve(results);
         });
     });
@@ -70,9 +78,10 @@ const criarComanda = (codigoComanda, valorTotal) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [codigoComanda, valorTotal, dataAtualizada, 'ABERTA'], (error, results) => {
             if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { codigoComanda, valorTotal, dataAtualizada});
-                return reject(`Erro ao executar query: ${error.message}`);
+                const customError = new Error(`Erro ao criar comanda no banco de dados: ${error.message}`);
+                customError.status = 500;
+                customError.details = {sql, params:{codigoComanda, valorTotal, dataAtualizada}};
+                return reject(customError);
             }
             resolve(results.insertId);
         });
@@ -92,11 +101,17 @@ const deletarComanda = (id) => {
     return new Promise((resolve, reject) => {
         conexao.query(sql, [id], (error, results) => {
             if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Erro ao executar query: ${error.message}`);
+                const customError = new Error(`Erro ao deletar comanda: ${error.message}`);
+                customError.status = 500;
+                customError.details = {sql, params: {id}};
+                return reject(customError);
             }
-            resolve('resultado: ', results);
+            if(results.affectedRows === 0) {
+                const notFoundError = new Error(`Comanda com id ${id} não encontrada!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+            resolve();
         });
     });
 };
@@ -113,24 +128,46 @@ const atualizarComanda = (id, codigoComanda, valorTotal) => {
         UPDATE tb_comanda SET codigo_comanda = ?, valor_total = ?, data_update_comanda = ? WHERE id = ?
     `;
 
+    const sqlSelect = `SELECT id FROM tb_comanda WHERE id = ?`;
+
     const dataAtualizada = getDataFormatada();
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [codigoComanda, valorTotal, dataAtualizada, id], (error, results) => {
-            if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id, codigoComanda, valorTotal, dataAtualizada});
-                return reject(`Erro ao executar query: ${error.message}`);
+        
+        conexao.query(sqlSelect, [id], (selectError, selectResults) => {
+            if(selectError){
+                const error = new Error(`Erro ao verificar existência da comanda: ${selectError.message}`);
+                error.status = 500;
+                return reject(error);
             }
 
-            if (results.affectedRows === 0) {
-                return reject('Nenhuma linha foi afetada. Verifique os parâmetros ou o ID.');
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Comanda com id ${id} não encontrada!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
             }
 
-            resolve({
-                affectedRows: results.affectedRows,
-                data_update_comanda: dataAtualizada
-            });            
+            conexao.query(sql, [codigoComanda, valorTotal, dataAtualizada, id], (error, results) => {
+                if(error){
+                    const customError = new Error(`Erro ao atualizar comanda: ${error.message}`);
+                    customError.status = 500;
+                    customError.details = {sql, params: {id, codigoComanda, valorTotal, dataAtualizada}};
+                    return reject(customError);
+                }
+    
+                if (results.affectedRows === 0) {
+                    const noChangeError = new Error(`Nenhuma alteração foi feita nos dados da comanda: ${id}`);
+                    noChangeError.status = 400;
+                    return reject(noChangeError);
+                }
+
+                resolve({
+                    affectedRows: results.affectedRows,
+                    codigo_comanda: codigoComanda,
+                    valor_total: valorTotal,
+                    data_update_comanda: dataAtualizada
+                });
+            });
         });
     });
 };
