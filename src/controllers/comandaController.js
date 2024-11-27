@@ -11,7 +11,7 @@ router.get('/comanda/:id', async(req, res, next) =>{
         const comanda = await comandaService.buscarComandaPorId(comandaID);
 
         logger.info(`Comanda id ${comandaID} encontrada: ${JSON.stringify(comanda)}`);
-        res.json(comanda);
+        res.status(200).json({comanda});
     } catch (error) {
         next(error);
     }
@@ -22,7 +22,7 @@ router.get('/comandas', async (req, res, next) => {
         const comandas = await comandaService.buscarTodasComandas();
 
         logger.info(`Comandas encontradas: ${JSON.stringify(comandas)}`);
-        res.json(comandas);
+        res.status(200).json({comandas});
     } catch (error) {
         next(error);
     }

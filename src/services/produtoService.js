@@ -8,18 +8,26 @@ import getDataFormatada from "../config/dataFormatada.js";
  * @returns {Promise<object>} - Produto encontrado ou undefined
  */
 const buscarProdutoPorId = (id) => {
-    const sql = `
+    const selectIdSql = `
         SELECT * FROM tb_produto WHERE id = ?
     `;
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [id], (error, results) => {
-            if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Nao foi possivel buscar o produto: ${error.message}`);
+        conexao.query(selectIdSql, [id], (selectError, selectResults) => {
+            if(selectError){
+                const customError = new Error(`Erro ao buscar produto no banco de dados: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectIdSql, params: {id} };
+                return reject(customError);
             }
-            resolve(results[0]);
+
+            if(selectResults.length === 0){
+                const notFoundError = new Error(`Produto com id ${id} não encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
+            resolve(selectResults[0]);
         });
     });
 };
@@ -29,19 +37,26 @@ const buscarProdutoPorId = (id) => {
  * @returns {Promise<Array<object>>} - Produtos encontrados
  */
 const buscarTodosProdutos = () => {
-    const sql = `
+    const selectSql = `
         SELECT * FROM tb_produto 
     `;
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql, (error, results) => {
-            if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', {});
-                return reject(`Nao foi possivel buscar os produtos: ${error.message}`);
+        conexao.query(selectSql, (selectError, selectResults) => {
+            if(selectError){
+                const customError = new Error(`Erro ao buscar os produtos no banco de dados: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectSql};
+                return reject(customError);
             }
 
-            resolve(results);
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Nenhum produto encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
+            resolve(selectResults);
         });
     });
 };
@@ -55,7 +70,7 @@ const buscarTodosProdutos = () => {
  * @returns {Promise<number>} - Identificador do produto adicionado
  */
 const adicionarProduto = (codigo_produto, nome_produto, valor_un_produto, quantidade_estoque) => {
-    const sql = `
+    const insertSql = `
         INSERT INTO tb_produto(codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, data_insert_produto) VALUES
         (?, ?, ?, ?, ?)
     `;
@@ -63,13 +78,15 @@ const adicionarProduto = (codigo_produto, nome_produto, valor_un_produto, quanti
     const dataAtualizada = getDataFormatada();
     
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada], (error, results) => {
-            if(error){
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada});
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(insertSql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada], (insertError, insertResults) => {
+            if(insertError){
+                const customError = new Error(`Erro ao adicionar produto no banco de dados: ${insertError.message}`);
+                customError.status = 500;
+                customError.details = {insertSql, params: {codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada}};
+                return reject(customError);
             }
-            resolve(results.insertId);
+
+            resolve(insertResults.insertId);
         });
     });
 };
@@ -80,18 +97,39 @@ const adicionarProduto = (codigo_produto, nome_produto, valor_un_produto, quanti
  * @returns {Promise<string>} - Resultado da operação
  */
 const deletarProduto = (id) => {
-    const sql = `
+    const deleteSql = `
         DELETE FROM tb_produto WHERE id = ?
     `;
 
+    const selectSql = `
+        SELECT id FROM tb_produto WHERE id =? 
+    `;
+
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [id], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(selectSql, [id], (selectError, selectResults) => {
+            if(selectError){
+                const customError = new Error(`Erro ao verificar produto: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectSql, params: {id} };
+                return reject(customError);
             }
-            resolve('resultado: ', results);
+
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Erro ao deletar! Produto não encontrado com id ${id}!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
+            conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
+                if(deleteError) {
+                    const customError = new Error(`Erro ao deletar produto: ${error.message}`);
+                    customError.status = 500;
+                    customError.details = {sql, params: {id}};
+                    return reject(customError);
+                }
+
+                resolve();
+            });        
         });
     });
 };
@@ -105,27 +143,50 @@ const deletarProduto = (id) => {
  * @returns {Promise<string>} - Resultado da operação
  */
 const atualizarProduto = (id,codigo_produto, nome_produto, valor_un_produto, quantidade_estoque) => {
-    const sql = `
+    const updateSql = `
         UPDATE tb_produto SET codigo_produto = ?, nome_produto = ?, valor_un_produto = ?, quantidade_estoque = ?, data_update_produto = ? WHERE id = ?
     `;
+
+    const sqlSelect = `SELECT id FROM tb_produto WHERE id=? `;
 
     const dataAtualizada = getDataFormatada();
 
     return new Promise ((resolve, reject) => {
-        conexao.query(sql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada, id], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id, codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada});
-                return reject(`Erro ao executar query: ${error.message}`);
+
+        conexao.query(sqlSelect, [id], (selectError, selectResults) => {
+            if(selectError) {
+                const error = new Error(`Erro ao verificar existência do produto: ${selectError.message}`);
+                error.status = 500;
+                return reject(error);
             }
 
-            if (results.affectedRows === 0) {
-                return reject('Nenhuma linha foi afetada. Verifique os parâmetros ou o ID.');
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Produto com id ${id} não encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
             }
 
-            resolve({
-                affectedRows: results.affectedRows,
-                data_update_produto: dataAtualizada
+            conexao.query(updateSql, [codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada, id], (updateError, updateResults) => {
+                if(updateError) {
+                    const customError = new Error(`Erro ao atualizar produto: ${updateError.message}`);
+                    customError.status = 500;
+                    customError.details = {updateSql, params: {id, codigo_produto, nome_produto, valor_un_produto, quantidade_estoque, dataAtualizada}};
+                    return reject(customError);
+                }
+    
+                if (updateResults.affectedRows === 0) {
+                    const noChangeError = new Error(`Nenhuma alteração foi feita nos dados do produto: ${id}`);
+                    noChangeError.status = 400;
+                    return reject(noChangeError);
+                }
+    
+                resolve({
+                    codigo_produto: codigo_produto,
+                    nome_produto: nome_produto,
+                    valor_un_produto: valor_un_produto,
+                    quantidade_estoque: quantidade_estoque,
+                    data_update_produto: dataAtualizada
+                });
             });
         });
     });
