@@ -128,6 +128,11 @@ const deletarProduto = (id) => {
                     return reject(customError);
                 }
 
+                if (deleteResults.affectedRows === 0) {
+                    const noChangeError = new Error(`Verifique se o produto com id ${id} existe.`);
+                    noChangeError.status = 400;
+                    return reject(noChangeError);
+                }
                 resolve();
             });        
         });
