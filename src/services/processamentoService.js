@@ -7,18 +7,26 @@ import getDataFormatada from "../config/dataFormatada.js";
  * @returns {Promise<object>} - Processamento encontrado ou undefined
  */
 const buscarProcessamentoPorId = (id) => {
-    const sql = `
+    const selectIdSql = `
         SELECT * FROM tb_processamento WHERE id = ?
     `;
 
     return new Promise((resolve, reject) => {    
-        conexao.query(sql, [id], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(selectIdSql, [id], (selectError, selectResults) => {
+            if(selectError){
+                const customError = new Error(`Erro ao buscar processamento no banco de dados: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectIdSql, params: {id}};
+                return reject(customError);
             }
-            resolve(results[0]);
+
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Processamento com id ${id} nao encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+
+            resolve(selectResults[0]);
         });
     });
 };  
@@ -28,18 +36,25 @@ const buscarProcessamentoPorId = (id) => {
  * @returns {Promise<Array<object>>} - Processamentos encontrados
  */
 const buscarTodosProcessamentos = () => {
-    const sql = `
+    const selectSql = `
         SELECT * FROM tb_processamento
     `;
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql, (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', {});
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(selectSql, (selectError, selectResults) => {
+            if(selectError) {
+                const customError = new Error(`Erro ao buscar processamento no banco de dados: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectSql};
+                return reject(customError);
             }
-            resolve(results);
+
+            if(selectResults.length === 0) {
+                const notFoundError = new Error(`Nenhum processamento encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+            resolve(selectResults);
         });
     });
 };
@@ -54,7 +69,7 @@ const buscarTodosProcessamentos = () => {
  * @returns {Promise<number>} - Identificador do processamento criado
  */
 const criarProcessamento = (comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto) => {
-    const sql = `
+    const insertSql = `
         INSERT INTO tb_processamento(comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, data_abertura_processamento) VALUES
         (?, ?, ?, ?, ?, ?)
     `;
@@ -62,13 +77,14 @@ const criarProcessamento = (comanda_id, produto_id, servico_id, quantidade_servi
     const dataAtualizada = getDataFormatada();
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql,[comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada });
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(insertSql,[comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada], (insertError, insertResults) => {
+            if(insertError) {
+                const customError = new Error(`Erro ao criar processamento no banco de dados: ${insertError.message}`);
+                customError.status = 500;
+                customError.details = {insertSql, params: {comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada}};
+                return reject(customError);
             }
-            resolve(results.insertId);
+            resolve(insertResults.insertId);
         });
     });
 };
@@ -79,18 +95,45 @@ const criarProcessamento = (comanda_id, produto_id, servico_id, quantidade_servi
  * @returns {Promise<string>} - Resultado da operação
  */
 const deletarProcessamento = (id) => {
-    const sql = `
+    const deleteSql = `
         DELETE FROM tb_processamento WHERE id = ?
     `;
 
+    const selectSql = `
+        SELECT id FROM tb_processamento WHERE id = ?
+    `;
+
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [id], (error, results) => {
-            if(error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id });
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(selectSql, [id], (selectError, selectResults) => {
+            if(selectError) {
+                const customError = new Error(`Erro ao verificar processamento: ${selectError.message}`);
+                customError.status = 500;
+                customError.details = {selectSql, params: {id}};
+                return reject(customError);
             }
-            resolve('resultado: ', results);
+
+            if(selectResults.length === 0) {    
+                const notFoundError = new Error(`Erro ao deletar! Processamento não encontrado com id ${id}!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
+            }
+            
+            conexao.query(deleteSql, [id], (deleteError, deleteResults) => {
+                if(deleteError) {
+                    const customError = new Error(`Erro ao deletar processamento: ${deleteError.message}`);
+                    customError.status = 500;
+                    customError.details = {deleteSql, params: {id}};
+                    return reject(customError);
+                }
+
+                if(deleteResults.affectedRows === 0) {
+                    const notFoundError = new Error(`Verifique se o processamento com id ${id} existe.`);
+                    notFoundError.status = 404;
+                    return reject(notFoundError);
+                }
+
+                resolve();
+            });
         });
     });
 };
@@ -107,7 +150,7 @@ const deletarProcessamento = (id) => {
  * @returns {Promise<void>} - Resultado da operação
  */
 const atualizarProcessamento = (id, comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto) => {
-    const sql = `
+    const updateSql = `
         UPDATE tb_processamento SET
         comanda_id = ?,
         produto_id = ?,
@@ -118,23 +161,47 @@ const atualizarProcessamento = (id, comanda_id, produto_id, servico_id, quantida
         WHERE id = ?
     `;
 
+    const selectSql = `
+        SELECT id FROM tb_processamento WHERE id = ?
+    `;
+
     const dataAtualizada = getDataFormatada();
 
     return new Promise((resolve, reject) => {
-        conexao.query(sql, [comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada, id], (error, results) => {
-            if (error) {
-                console.error('Erro na query SQL:', sql);
-                console.error('Parâmetros:', { id, comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada });
-                return reject(`Erro ao executar query: ${error.message}`);
+        conexao.query(selectSql, [id], (selectError, selectResults) => {
+            if (selectError) {
+                const error = new Error(`Erro ao verificar existência do processamento: ${selectError.message}`);
+                error.status = 500;
+                return reject(error);
             }
 
-            if (results.affectedRows === 0) {
-                return reject('Nenhuma linha foi afetada. Verifique os parâmetros ou o ID.');
+            if(selectResults.length === 0 ) {
+                const notFoundError = new Error(`Processamento com id ${id} não encontrado!`);
+                notFoundError.status = 404;
+                return reject(notFoundError);
             }
-
-            resolve({
-                affectedRows: results.affectedRows,
-                data_update_processamento: dataAtualizada
+            conexao.query(updateSql, [comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada, id], (updateError, updateResults) => {
+                if (updateError) {
+                    const customError = new Error(`Erro ao atualizar processamento: ${updateError.message}`);
+                    customError.status = 500;
+                    customError.details = {updateSql, params: {id, comanda_id, produto_id, servico_id, quantidade_servico, quantidade_produto, dataAtualizada}};
+                    return reject(customError);
+                }
+    
+                if (updateResults.affectedRows === 0) {
+                    const noChangeError = new Error(`Nenhuma alteração foi feita nos dados do processamento: ${id}`);
+                    noChangeError.status = 400;
+                    return reject(noChangeError);
+                }
+    
+                resolve({
+                    comanda_id : comanda_id,
+                    produto_id : produto_id,
+                    servico_id : servico_id,
+                    quantidade_servico : quantidade_servico,
+                    quantidade_produto : quantidade_produto,
+                    data_update_processamento: dataAtualizada
+                });
             });
         });
     });

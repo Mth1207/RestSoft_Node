@@ -112,19 +112,19 @@ const deletarComanda = (id) => {
             }
 
             if(selectResults.length === 0) {
-                const notFoundError = new Error(`Erro ao deletar! Produto não encontrado com id ${id}!`);
+                const notFoundError = new Error(`Erro ao deletar! Comanda não encontrado com id ${id}!`);
                 notFoundError.status = 404;
                 return reject(notFoundError);
             }
-            conexao.query(sql, [id], (error, results) => {
-                if(error){
-                    const customError = new Error(`Erro ao deletar comanda: ${error.message}`);
+            conexao.query(sql, [id], (deleteError, deleteResults) => {
+                if(deleteError){
+                    const customError = new Error(`Erro ao deletar comanda: ${deleteError.message}`);
                     customError.status = 500;
                     customError.details = {sql, params: {id}};
                     return reject(customError);
                 }
-                if(results.affectedRows === 0) {
-                    const notFoundError = new Error(`Comanda com id ${id} não encontrada!`);
+                if(deleteResults.affectedRows === 0) {
+                    const notFoundError = new Error(`Verifique se a comanda com id ${id} existe.`);
                     notFoundError.status = 404;
                     return reject(notFoundError);
                 }
