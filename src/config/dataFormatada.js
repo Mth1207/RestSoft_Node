@@ -1,32 +1,3 @@
-// import comandaProdutoService from "../service/comandaProdutoService.js";
-
-
-// /**
-//  * Pega a data de abertura da primeira comanda encontrada na base de dados
-//  * @returns {Promise<Date>}
-//  */
-// async function pegarDataBd() {
-//     const data = await comandaProdutoService.buscarTodasComandas();
-//     return data[0].data_abertura_comanda;
-// }
-
-
-
-// /**
-//  * Exibe a data de abertura da primeira comanda encontrada na base de dados
-//  * em formato ISO no console
-//  */
-// async function exibirDataBd() {
-//     const data = await pegarDataBd();
-//     console.log(data);
-// }
-
-// exibirDataBd();
-
-/**
- * Retorna a data atual no formato ISO
- * @returns {string} - Data atual em formato ISO
- */
 const getDataFormatada = () => {
     const data = new Date();
     const ano = data.getFullYear();
